@@ -7,14 +7,4 @@ export const routes = [
         path: '/',
         component: AllProduct
     },
-    // {
-    //     name: 'create',
-    //     path: '/create',
-    //     component: CreateProduct
-    // },
-    // {
-    //     name: 'edit',
-    //     path: '/edit/:id',
-    //     component: EditProduct
-    // }
 ];

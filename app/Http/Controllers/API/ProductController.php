@@ -5,16 +5,19 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
-
-
+use Image;
+use Artisan;
+use Storage;
 class ProductController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
+     * @param $imgPath
      */
-    public function index()
+    private $imgPath='products/';
+    public function index(Request $request)
     {
        return $products=Product::paginate(2);
     }
@@ -29,6 +32,7 @@ class ProductController extends Controller
     {
         $this->validate($request, [
             'title' => 'required|string|max:100|unique:products,title',
+            //'img_path'=>'nullable|mimes:jpeg,png,jpg,gif,svg',
             'price' => 'required|numeric',
             'details' => 'sometimes|max:200',
             'status' => 'required',
@@ -36,13 +40,17 @@ class ProductController extends Controller
         ],[
             'details.max'=>'The description less than 200 characters',
         ]);
-
-        $product=Product::create([
+        $data=[
             'title'=>$request->title,
             'price'=>$request->price,
             'details'=>($request->details?$request->details:NULL),
             'status'=>$request->status,
-        ]);
+        ];
+        if($request->has('img_path')){
+            $imageName=$this->imageprocess($request->img_path);
+            $data['img_path']=$imageName;
+        }
+        $product=Product::create($data);
         return response()->json(['product'=>$product,200]);
     }
 
@@ -59,7 +67,7 @@ class ProductController extends Controller
     /**
      * Display the search product.
      *
-     * @param  \Illuminate\Http\Request  $product
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function search(Request $request)
@@ -76,16 +84,20 @@ class ProductController extends Controller
         $to=$request->price_to;
         $date=$request->date;
 
-        $products=Product::query();
 
-        if ($request->title){
-            $products->where('title', 'LIKE', "%{$request->title}%");
+
+        $query = Product::query();
+        if($title!=null){
+            $query->where('title','LIKE',"%{$title}%");
+        }
+        if($from!=null && $to!=null){
+            $query->whereBetween('price',[$from,$to]);
+        }
+        if($date!=null){
+            $query->whereDate('created_at',$date);
         }
 
-        if ($request->date){
-            $products->whereDate('created_at'$request->date);
-        }
-        $products->get();
+        $products=$query->paginate(2);
         return $products;
     }
 
@@ -100,6 +112,7 @@ class ProductController extends Controller
     {
         $this->validate($request, [
             'title' => 'required|string|max:100|unique:products,title,'.$product->id,
+            //'img_path'=>'nullable|mimes:jpeg,png,jpg,gif,svg',
             'price' => 'required|numeric',
             'details' => 'sometimes|max:200',
             'status' => 'required',
@@ -107,13 +120,36 @@ class ProductController extends Controller
         ],[
             'details.max'=>'The description less than 200 characters',
         ]);
-        $product->update([
+
+        $data=[
             'title'=>$request->title,
             'price'=>$request->price,
             'details'=>($request->details?$request->details:NULL),
             'status'=>$request->status,
-        ]);
+        ];
+        if($request->has('imageEditMode') && $request->imageEditMode){
+            if (Storage::disk('public')->exists($this->imgPath.$product->img_path)) {
+                Storage::disk('public')->delete($this->imgPath.$product->img_path);
+            }
+            $imageName=$this->imageprocess($request->img_path);
+            $data['img_path']=$imageName;
+        }
+        $product->update($data);
         return response()->json(['success'=>true,200]);
+    }
+    public function imageprocess($image)
+    {
+        $exploed1 = explode(";", $image);
+        $exploed2 = explode("/", $exploed1[0]);
+        $filename =  time().'.'.$exploed2[1];
+
+        $destinationPath = storage_path('app/public/products/');
+        if (!is_dir($destinationPath)) {
+            mkdir($destinationPath, 0777, TRUE);
+        }
+
+        Image::make($image)->resize(215, 215)->save($destinationPath.$filename);
+        return $filename;
     }
 
     /**
@@ -124,6 +160,9 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        if (Storage::disk('public')->exists($this->imgPath.$product->img_path)) {
+            Storage::disk('public')->delete($this->imgPath.$product->img_path);
+        }
         $product->delete();
         return response()->json(['success'=>true,200]);
     }

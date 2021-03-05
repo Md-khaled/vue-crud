@@ -27,19 +27,27 @@
                         </div>
                     </form>
                     <div class="card-header">
-                        <h3 class="card-title">Product List</h3>
-
                         <div class="card-tools">
-                            <button class="btn btn-success" @click.prevent="showModal()" >Add New <i class="fas fa-plus"></i></button>
+                            <div class="row">
+                                <div class="col-6">
+                                    <h3 class="card-title">Product List</h3>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-success float-right" @click.prevent="showModal()" >Add New <i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+
+
                         </div>
                     </div>
 
                     <div class="card-body table-responsive p-0">
-                        <table class="table table-hover">
+                        <table class="table table-hover text-center">
                             <tbody>
                             <tr>
                                 <th>ID</th>
                                 <th>Title</th>
+                                <th>Image</th>
                                 <th>Price</th>
                                 <th>Details</th>
                                 <th>Status</th>
@@ -47,18 +55,19 @@
                                 <th width="15%">Modify</th>
                             </tr>
                             <tr v-for="(product, index) in productList.data" :key="product.id">
-                                <td>{{ product.id }}</td>
-                                <td>{{ product.title | upperText }}</td>
-                                <td>{{ product.price }}</td>
-                                <td>{{ product.details }}</td>
-                                <td><span :class="product.status?'badge badge-primary':'badge badge-danger'">{{ product.status?'Active':'In Active' }}</span></td>
-                                <td>{{ product.created_at |formateDate}}</td>
-                                <td>
+                                <td class="align-middle">{{ product.id }}</td>
+                                <td class="align-middle">{{ product.title | upperText }}</td>
+                                <td class="align-middle"> <img width="20%"  :src="getProductImg(product.img_path)" class="img-fluid"/></td>
+                                <td class="align-middle">{{ product.price }}</td>
+                                <td class="align-middle">{{ product.details }}</td>
+                                <td class="align-middle"><span :class="product.status?'badge badge-primary':'badge badge-danger'">{{ product.status?'Active':'In Active' }}</span></td>
+                                <td class="align-middle">{{ product.created_at |formateDate}}</td>
+                                <td class="align-middle">
                                     <button @click.prevent="editModal(product)"   class="btn btn-success mr-2"><i class="fa fa-edit"></i></button>
                                     <button @click.prevent="deleteProduct(product.id)" class="btn btn-danger"><i class="fa fa-trash"></i></button>
                                 </td>
                             </tr>
-                            <tr v-if="productList==''">
+                            <tr v-if="productList=='' || productList.data==''">
                                 <td colspan="7"><h2 class="text-center">Product Info Not Found</h2></td>
                             </tr>
                             </tbody>
@@ -66,7 +75,7 @@
                     </div>
 
                     <div class="card-footer">
-                        <pagination :data="productList" @pagination-change-page="getResults" align="right"></pagination>
+                        <pagination :data="productList" @pagination-change-page="loadProduct" align="right"></pagination>
                     </div>
                 </div>
 
@@ -94,11 +103,22 @@
                             </div>
                             <div class="form-group">
                                 <label for="product-price" class="col-form-label">Price:</label>
-                                <input v-model="products.price" type="text" class="form-control" id="product-price">
+                                <input v-model="products.price" type="number" class="form-control" id="product-price">
                             </div>
                             <div class="form-group">
-                                <label for="product-details" class="col-form-label">Decription:</label>
+                                <label for="product-details" class="col-form-label">Description:</label>
                                 <textarea v-model="products.details" class="form-control" id="product-details"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-image" class="col-form-label">Upload Image:</label><br/>
+                                <img   width="50%" height="50%" :src="new_image" class="img-fluid mx-auto d-block"/>
+                                <img :style="imageEditMode?'':'display:none'" width="50%" height="50%" :src="imageEditMode?getProductImg(products.img_path):''" class="img-fluid mx-auto d-block"/>
+                                <div v-if="!imageEditMode" class="mt-3">
+                                    <input   @change="uploadImage"  type="file" class="form-control" id="product-image">
+                                </div>
+                                <div v-else class="mt-3 py-3">
+                                    <button @click="RemoveImage" type="button" class="btn btn-danger mt-2 float-right d-block">Change image</button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label  class="col-form-label">Status:</label>
@@ -127,17 +147,21 @@ export default {
     data(){
         return {
             editMode:false,
+            imageEditMode:true,
             productList:{},
+            base_path:window.location.origin,
             search:{
                 title:'',
                 price_from:'',
                 price_to:'',
                 date:'',
             },
+            new_image:'',
             products:{
                 id: '',
                 title: '',
                 price:'',
+                img_path:'',
                 details: '',
                 status: '',
                 created_at: '',
@@ -149,8 +173,8 @@ export default {
 
     },
     methods:{
-        loadProduct(){
-            axios.get('api/products')
+        loadProduct(page = 1){
+            axios.get('api/products?page=' + page)
                 .then(response =>{
                     console.log(response);
                     // handle success
@@ -161,16 +185,31 @@ export default {
                     console.log(error);
                 })
         },
-        getResults(page = 1) {
-            axios.get('api/products?page=' + page)
-                .then(response => {
-                    this.productList = response.data;
-                });
+        uploadImage(event){
+            let file = event.target.files[0];
+            const reader = new FileReader();
+
+                reader.onload = ()=>{
+                    this.new_image = reader.result;
+                }
+                reader.readAsDataURL(file);
+
+        },
+        getProductImg(img){
+
+            let photo =`${this.base_path}/storage/products/`+ img ;
+            return photo;
+        },
+        RemoveImage(){
+            let self=this;
+            this.imageEditMode = false;
+            this.new_image = '';
         },
         searchProduct(){
             this.$Progress.start();
             axios.post('api/search-product',this.search)
                 .then((data ) => {
+                    console.log(data);
                     this.productList=data.data;
                     //this.successMsg("Record insert successfully");
                     this.$Progress.finish();
@@ -183,6 +222,7 @@ export default {
         },
         addProduct(){
             this.$Progress.start();
+            this.products.img_path=this.new_image;
             axios.post('api/products',this.products)
                 .then((data ) => {
                     this.loadProduct();
@@ -197,6 +237,12 @@ export default {
                 })
         },
         updateProduct(){
+            let self=this;
+            if(self.new_image!=''){
+                self.products.img_path=self.new_image;
+                self.$set(self.products,'imageEditMode', true);
+                self.new_image='';
+            }
             axios.put('api/products/'+this.products.id, this.products).then(response => {
                 this.loadProduct();
                 $('#productModal').modal('hide');
@@ -225,7 +271,7 @@ export default {
                         axios.delete("api/products/"+product_id)
                             .then(response =>{
                                 console.log(response);
-                                ref.get_all_product();
+                                ref.loadProduct();
                                 iziToast.success({
                                     title: 'Success',
                                     message: response.data.success,
@@ -257,14 +303,17 @@ export default {
         },
         showModal(){
             this.editMode = false;
+            this.imageEditMode = false;
             this.resetModal();
         },
         editModal(product){
             this.editMode = true;
+            this.imageEditMode = true;
             this.products=product;
             this.resetModal();
         },
         resetModal(){
+            this.new_image='';
             $('#clearForm')[0].reset();
             if(this.products){
                 console.log('exist');
@@ -277,3 +326,6 @@ export default {
     },
 }
 </script>
+<style scope>
+
+</style>
