@@ -3,7 +3,7 @@
 use App\Http\Controllers\API\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\API\AuthController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -20,3 +20,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 Route::resource('products', ProductController::class);
 Route::post('search-product', [ProductController::class, 'search'])->name('product.search');
+Route::post('register',[AuthController::class,'register'])->name('registration');
+Route::post('login',[AuthController::class,'login'])->name('login');
+

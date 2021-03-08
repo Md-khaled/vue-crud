@@ -1,5 +1,6 @@
 <template>
     <div class="container">
+        <Navbar></Navbar>
         <router-view></router-view>
         <!-- set progressbar -->
         <vue-progress-bar></vue-progress-bar>
@@ -7,9 +8,14 @@
 </template>
 
 <script>
+import Navbar from './components/Navbar'
 export default {
+    components: {
+        Navbar,
+    },
     mounted() {
-        console.log('Component mounted.')
+        //console.log('Component mounted.')
+
     }
 }
 </script>
