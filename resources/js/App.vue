@@ -10,6 +10,7 @@
 <script>
 import Navbar from './components/Navbar'
 export default {
+    name:'App-master',
     components: {
         Navbar,
     },
@@ -19,3 +20,8 @@ export default {
     }
 }
 </script>
+<style>
+#navbarNav a.router-link-exact-active {
+    color: #42b983;
+}
+</style>

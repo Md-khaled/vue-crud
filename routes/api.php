@@ -17,9 +17,15 @@ use App\Http\Controllers\API\AuthController;
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
+
 });
-Route::resource('products', ProductController::class);
-Route::post('search-product', [ProductController::class, 'search'])->name('product.search');
+
+
+Route::group(['middleware' => 'auth:api'],function(){
+    Route::resource('products', ProductController::class);
+    Route::post('search-product', [ProductController::class, 'search'])->name('product.search');
+    Route::delete('logout',[AuthController::class,'logout'])->name('logout');
+});
 Route::post('register',[AuthController::class,'register'])->name('registration');
 Route::post('login',[AuthController::class,'login'])->name('login');
 

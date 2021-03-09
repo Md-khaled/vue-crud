@@ -51,7 +51,7 @@
                                 <th>Price</th>
                                 <th>Details</th>
                                 <th>Status</th>
-                                <th>Registered At</th>
+                                <th>Created At</th>
                                 <th width="15%">Modify</th>
                             </tr>
                             <tr v-for="(product, index) in productList.data" :key="product.id">
@@ -68,7 +68,7 @@
                                 </td>
                             </tr>
                             <tr v-if="productList=='' || productList.data==''">
-                                <td colspan="7"><h2 class="text-center">Product Info Not Found</h2></td>
+                                <td colspan="8"><h2 class="text-center">Product Info Not Found</h2></td>
                             </tr>
                             </tbody>
                         </table>
@@ -144,8 +144,10 @@
 <script>
 // vue2 dropzone
 export default {
+    name:'Product',
     data(){
         return {
+            access_token:false,
             editMode:false,
             imageEditMode:true,
             productList:{},
@@ -173,8 +175,21 @@ export default {
 
     },
     methods:{
-        loadProduct(page = 1){
-            axios.get('api/products?page=' + page)
+        setToken(){
+            //set access_token in header
+            let self=this;
+            let token=localStorage.getItem('access_token');
+            if(token){
+                const config = {
+                    headers: { Authorization: `Bearer ${token}` }
+                };
+                self.access_token=config;
+            }else{
+                self.access_token=false;
+            }
+        },
+         loadProduct(page = 1){
+             axios.get('api/products?page='+ page,this.access_token)
                 .then(response =>{
                     console.log(response);
                     // handle success
@@ -207,7 +222,7 @@ export default {
         },
         searchProduct(){
             this.$Progress.start();
-            axios.post('api/search-product',this.search)
+            axios.post('api/search-product',this.search,this.access_token)
                 .then((data ) => {
                     console.log(data);
                     this.productList=data.data;
@@ -223,7 +238,7 @@ export default {
         addProduct(){
             this.$Progress.start();
             this.products.img_path=this.new_image;
-            axios.post('api/products',this.products)
+            axios.post('api/products',this.products,this.access_token)
                 .then((data ) => {
                     this.loadProduct();
                     $('#productModal').modal('hide');
@@ -243,7 +258,7 @@ export default {
                 self.$set(self.products,'imageEditMode', true);
                 self.new_image='';
             }
-            axios.put('api/products/'+this.products.id, this.products).then(response => {
+            axios.put('api/products/'+this.products.id, this.products,this.access_token).then(response => {
                 this.loadProduct();
                 $('#productModal').modal('hide');
                 this.successMsg("Record updated successfully");
@@ -268,7 +283,7 @@ export default {
                 buttons:[
                     ['<button><b>Yes</b></button>',function(instance,toast) {
                         instance.hide({transitionOut:'fadeOut'},toast,'button');
-                        axios.delete("api/products/"+product_id)
+                        axios.delete("api/products/"+product_id,ref.access_token)
                             .then(response =>{
                                 console.log(response);
                                 ref.loadProduct();
@@ -321,8 +336,13 @@ export default {
             $('#productModal').modal('show');
         },
     },
+    mounted(){
+
+    },
     created() {
+        this.setToken();
         this.loadProduct();
+
     },
 }
 </script>

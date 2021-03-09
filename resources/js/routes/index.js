@@ -8,16 +8,31 @@ export const routes = [
     {
         name: 'register',
         path: '/register',
-        component: Register
+        component: Register,
+        meta: {
+            hideForAuth: true
+        }
     },
     {
         name: 'login',
         path: '/login',
-        component: Login
+        component: Login,
+        meta: {
+            hideForAuth: true
+        }
     },
     {
         name: 'home',
         path: '/',
-        component: AllProduct
+        component: AllProduct,
+        meta: { requiresAuth: true }
     },
+    {
+        path:'*',
+        component: Login,
+    }
 ];
+
+
+
+

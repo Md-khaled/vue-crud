@@ -12,7 +12,7 @@
                         <router-link :to="{name: 'login'}" class="nav-link">Login <i class="fas fa-sign-in-alt"></i></router-link>
                     </li>
                     <li class="nav-item" v-else>
-                        <a class="nav-link" href="#">Logout</a>
+                        <a class="nav-link" @click="logout" style="cursor: pointer;">Logout</a>
                     </li>
                 </ul>
             </div>
@@ -23,19 +23,45 @@
 
 <script>
 export default{
+    name:'Navbar',
     data(){
         return{
             access_token:false,
         }
     },
-    mounted(){
+    methods: {
+        logout(){
+            let token=localStorage.getItem('access_token');
+            const config = {
+                headers: { Authorization: `Bearer ${token}` }
+            }
 
-        let token=localStorage.getItem('access_token')
-        if(token){
-            console.log(token);
-            this.access_token=token;
+            axios.delete('api/logout',config)
+            .then((response)=>{
+                console.log(response);
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user');
+                this.$router.push({name:'login'});
+                this.access_token=false;
+            })
+            .catch(()=>{
+
+            })
+
+            //bus.$emit('reloadData');
         }
-        console.log(token);
+    },
+    mounted(){
+        //check auth status
+        if(localStorage.getItem('access_token')){
+            this.access_token=true;
+        }
+        console.log(this.$root.$children[0].$children[1].$refs);
+        //update auth status
+        bus.$on('authStatus', (status) => {
+            this.access_token=status;
+        });
+
     }
 }
 </script>

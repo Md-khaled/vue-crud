@@ -26,6 +26,9 @@ Vue.use(VueProgressBar, {
     height: '4px'
 })
 
+// Import the EventBus we just created.
+import { EventBus } from './event-bus.js';
+window.bus = EventBus;
 
 //vue pagination
 Vue.component('pagination', require('laravel-vue-pagination'));
@@ -49,6 +52,25 @@ const router = new VueRouter({
     mode: 'history',
     routes: routes
 });
+
+//check authentication
+router.beforeEach((to, from, next) => {
+    if (to.matched.some(record => record.meta.requiresAuth)) {
+        console.log('sdfsdff'+to);
+        let token=localStorage.getItem('access_token')
+        if (!token) {
+            next({
+                name: 'login',
+            })
+        } else {
+            next()
+        }
+    } else {
+        next() // make sure to always call next()!
+    }
+});
+
+
 
 const app = new Vue({
     el: '#app',

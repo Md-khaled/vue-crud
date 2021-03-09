@@ -35,6 +35,7 @@
 
 <script>
 export default {
+    name:'Registration',
     data(){
         return {
             user:{
@@ -53,7 +54,9 @@ export default {
                    console.log(response);
                    this.successMsg("Registration success");
                    localStorage.setItem('access_token',response.data.access_token);
+                   this.updateAuthStatus();
                    this.$Progress.finish();
+                   this.$router.push({name:'home'});
                })
                .catch((errors)=>{
                    let error=errors.response.data.errors;
@@ -61,6 +64,9 @@ export default {
                    this.$Progress.fail();
                })
        },
+        updateAuthStatus() {
+            bus.$emit('authStatus', true)
+        },
         successMsg(msg){
             iziToast.success({
                 title: 'Success',

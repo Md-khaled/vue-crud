@@ -27,6 +27,7 @@
 
 <script>
 export default {
+    name: 'login',
     data() {
         return {
             user:{
@@ -49,8 +50,13 @@ export default {
                     this.$Progress.fail();
                     return;
                 }
-                localStorage.setItem('access_token',response.data.access_token);
+
+                localStorage.setItem('access_token', response.data.access_token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                this.updateAuthStatus();
                 this.$Progress.finish();
+                this.$router.push({name:'home'});
 
                 //if(response.sucess).
             })
@@ -59,6 +65,9 @@ export default {
                 this.errorMsg(error);
                 this.$Progress.fail();
             })
+        },
+        updateAuthStatus() {
+            bus.$emit('authStatus', true)
         },
         successMsg(msg){
             iziToast.success({
@@ -78,7 +87,6 @@ export default {
         },
     },
     mounted() {
-        console.log(this.$root.$children[0].$refs['navbar']);
         console.log('Component mounted.')
     }
 }
